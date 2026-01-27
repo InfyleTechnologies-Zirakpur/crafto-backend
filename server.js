@@ -133,7 +133,8 @@ app.use(helmet());
 app.use(
   cors({
     origin: [
-      "https://clonecrafr.vercel.app", // production
+      "https://clonecrafr.vercel.app", 
+    "https://frontend-crafto-sage.vercel.app",
       "http://localhost:3000",         // local development
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
