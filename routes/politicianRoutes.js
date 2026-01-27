@@ -134,6 +134,63 @@
 // module.exports = router;
 
 
+// const express = require("express");
+// const router = express.Router();
+// const multer = require("multer");
+// const { CloudinaryStorage } = require("multer-storage-cloudinary");
+// const cloudinary = require("../config/cloudinary");
+
+// const {
+//   getPoliticians,
+//   createPolitician,
+//   updatePolitician,
+//   deletePolitician
+// } = require("../controllers/politicianController");
+
+// // ⭐ Cloudinary Storage
+// const storage = new CloudinaryStorage({
+//   cloudinary,
+//   params: {
+//     folder: "politicians",
+//     allowed_formats: ["jpg", "jpeg", "png", "webp"],
+//   },
+// });
+
+// // ⭐ Multer Instance
+// const upload = multer({ storage });
+
+// // =============================================================
+// // ⭐ ROUTES
+// // =============================================================
+
+// // GET ALL Politicians
+// router.get("/", getPoliticians);
+
+// // CREATE Politician — Upload Logo + Banner
+// router.post(
+//   "/",
+//   upload.fields([
+//     { name: "logo", maxCount: 1 },
+//     { name: "banner", maxCount: 1 }
+//   ]),
+//   createPolitician
+// );
+
+// // UPDATE Politician — Replace Logo/Banner
+// router.put(
+//   "/:id",
+//   upload.fields([
+//     { name: "logo", maxCount: 1 },
+//     { name: "banner", maxCount: 1 }
+//   ]),
+//   updatePolitician
+// );
+
+// // DELETE Politician
+// router.delete("/:id", deletePolitician);
+
+// module.exports = router;
+
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
@@ -144,49 +201,65 @@ const {
   getPoliticians,
   createPolitician,
   updatePolitician,
-  deletePolitician
+  deletePolitician,
 } = require("../controllers/politicianController");
 
-// ⭐ Cloudinary Storage
+/* =============================================================
+   ⭐ CLOUDINARY STORAGE (IMAGE + VIDEO SUPPORT)
+============================================================= */
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: {
-    folder: "politicians",
-    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+  params: async (req, file) => {
+    const isVideo = file.mimetype.startsWith("video");
+
+    return {
+      folder: "politicians",
+      resource_type: isVideo ? "video" : "image", // 🔥 IMPORTANT
+      allowed_formats: isVideo
+        ? ["mp4", "webm"]
+        : ["jpg", "jpeg", "png", "webp"],
+    };
   },
 });
 
-// ⭐ Multer Instance
-const upload = multer({ storage });
+/* =============================================================
+   ⭐ MULTER INSTANCE
+============================================================= */
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 🔥 50MB (image/video safe)
+  },
+});
 
-// =============================================================
-// ⭐ ROUTES
-// =============================================================
+/* =============================================================
+   ⭐ ROUTES
+============================================================= */
 
-// GET ALL Politicians
+// ✅ GET ALL POLITICIANS (pagination + search)
 router.get("/", getPoliticians);
 
-// CREATE Politician — Upload Logo + Banner
+// ✅ CREATE POLITICIAN — Logo (image/video) + Banner (image)
 router.post(
   "/",
   upload.fields([
     { name: "logo", maxCount: 1 },
-    { name: "banner", maxCount: 1 }
+    { name: "banner", maxCount: 1 },
   ]),
   createPolitician
 );
 
-// UPDATE Politician — Replace Logo/Banner
+// ✅ UPDATE POLITICIAN — Replace Logo / Banner
 router.put(
   "/:id",
   upload.fields([
     { name: "logo", maxCount: 1 },
-    { name: "banner", maxCount: 1 }
+    { name: "banner", maxCount: 1 },
   ]),
   updatePolitician
 );
 
-// DELETE Politician
+// ✅ DELETE POLITICIAN — Cloudinary cleanup inside controller
 router.delete("/:id", deletePolitician);
 
 module.exports = router;

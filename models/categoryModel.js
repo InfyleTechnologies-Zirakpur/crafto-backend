@@ -71,7 +71,29 @@
 
 // module.exports = mongoose.model("Category", categorySchema);
 
-const mongoose = require("mongoose");
+// const mongoose = require("mongoose");
+
+// const CategorySchema = new mongoose.Schema(
+//   {
+//     name: { type: String, required: true },
+//     orientation: { type: String, default: "portrait" },
+//     status: { type: String, default: "active" },
+
+//     religious: { type: mongoose.Schema.Types.ObjectId, ref: "Religious", default: null },
+//     language: { type: mongoose.Schema.Types.ObjectId, ref: "Language", default: null },
+
+//     filePath: { type: String, default: "" },
+//     filePublicId: { type: String, default: "" },
+
+//     // ⭐ NEW FEATURE: FESTIVAL CATEGORY
+//     isFestivalCategory: { type: Boolean, default: false }
+//   },
+//   { timestamps: true }
+// );
+
+// module.exports = mongoose.model("Category", CategorySchema);
+
+const mongoose = require("mongoose"); 
 
 const CategorySchema = new mongoose.Schema(
   {
@@ -79,14 +101,30 @@ const CategorySchema = new mongoose.Schema(
     orientation: { type: String, default: "portrait" },
     status: { type: String, default: "active" },
 
-    religious: { type: mongoose.Schema.Types.ObjectId, ref: "Religious", default: null },
-    language: { type: mongoose.Schema.Types.ObjectId, ref: "Language", default: null },
+    religious: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Religious",
+      default: null,
+    },
+
+    language: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Language",
+      default: null,
+    },
 
     filePath: { type: String, default: "" },
     filePublicId: { type: String, default: "" },
 
-    // ⭐ NEW FEATURE: FESTIVAL CATEGORY
-    isFestivalCategory: { type: Boolean, default: false }
+    // ⭐ FESTIVAL FLAG
+    isFestivalCategory: { type: Boolean, default: false },
+
+    // ⭐ FESTIVAL LINK
+    festival: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Festival",
+      default: null,
+    },
   },
   { timestamps: true }
 );

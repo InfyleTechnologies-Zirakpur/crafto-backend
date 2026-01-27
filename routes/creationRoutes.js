@@ -43,3 +43,4 @@ router.get("/", authMiddleware, getCreations);
 router.delete("/:id", authMiddleware, deleteCreation);
 
 module.exports = router;
+

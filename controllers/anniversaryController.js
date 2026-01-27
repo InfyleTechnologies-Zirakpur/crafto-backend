@@ -1,117 +1,349 @@
-const Anniversary = require('../models/Anniversary');
-const cloudinary = require('../config/cloudinary');
+// const Anniversary = require("../models/Anniversary");
 
+// /* ======================================================
+//    GET ANNIVERSARIES (LIST + SEARCH + PAGINATION)
+// ====================================================== */
+// exports.getBirthdays = async (req, res) => {
+//   try {
+//     const { search = "", page = 1, limit = 10 } = req.query;
+
+//     const query = search
+//       ? { name: { $regex: search, $options: "i" } }
+//       : {};
+
+//     const total = await Anniversary.countDocuments(query);
+
+//     const anniversaries = await Anniversary.find(query)
+//       .sort({ createdAt: -1 })
+//       .skip((page - 1) * limit)
+//       .limit(Number(limit));
+
+//     res.json({
+//       anniversaries,
+//       total,
+//       pages: Math.ceil(total / limit),
+//     });
+//   } catch (err) {
+//     console.error("❌ GET ERROR:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
+// /* ======================================================
+//    CREATE ANNIVERSARY (IMAGE / VIDEO + BANNER)
+// ====================================================== */
+// exports.createBirthday = async (req, res) => {
+//   try {
+//     const body = req.body;
+
+//     const mediaFile = req.files?.media?.[0];
+//     const bannerFile = req.files?.banner?.[0];
+
+//     const doc = await Anniversary.create({
+//       title: body.title,
+//       name: body.name,
+//       date: body.date,
+//       status: body.status || "active",
+
+//       // MEDIA (image / video)
+//       media: mediaFile?.path || "",
+//       mediaPublicId: mediaFile?.filename || "",
+//       mediaType: mediaFile?.mimetype?.startsWith("video")
+//         ? "video"
+//         : "image",
+
+//       // BANNER
+//       banner: bannerFile?.path || "",
+//       bannerPublicId: bannerFile?.filename || "",
+
+//       zoom: Number(body.zoom) || 1,
+//       offsetX: Number(body.offsetX) || 0,
+//       offsetY: Number(body.offsetY) || 0,
+
+//       bannerZoom: Number(body.bannerZoom) || 1,
+//       bannerX: Number(body.bannerX) || 0,
+//       bannerY: Number(body.bannerY) || 0,
+//     });
+
+//     res.status(201).json({
+//       success: true,
+//       anniversary: doc,
+//     });
+//   } catch (err) {
+//     console.error("❌ CREATE ERROR:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
+// /* ======================================================
+//    UPDATE ANNIVERSARY
+// ====================================================== */
+// exports.updateBirthday = async (req, res) => {
+//   try {
+//     const existing = await Anniversary.findById(req.params.id);
+//     if (!existing) {
+//       return res.status(404).json({ error: "Anniversary not found" });
+//     }
+
+//     const data = { ...req.body };
+
+//     // MEDIA UPDATE
+//     if (req.files?.media?.[0]) {
+//       const file = req.files.media[0];
+//       data.media = file.path;
+//       data.mediaPublicId = file.filename;
+//       data.mediaType = file.mimetype.startsWith("video")
+//         ? "video"
+//         : "image";
+//     }
+
+//     // BANNER UPDATE
+//     if (req.files?.banner?.[0]) {
+//       const file = req.files.banner[0];
+//       data.banner = file.path;
+//       data.bannerPublicId = file.filename;
+//     }
+
+//     const updated = await Anniversary.findByIdAndUpdate(
+//       req.params.id,
+//       data,
+//       { new: true }
+//     );
+
+//     res.json({
+//       success: true,
+//       anniversary: updated,
+//     });
+//   } catch (err) {
+//     console.error("❌ UPDATE ERROR:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
+// /* ======================================================
+//    DELETE ANNIVERSARY
+// ====================================================== */
+// exports.deleteBirthday = async (req, res) => {
+//   try {
+//     const existing = await Anniversary.findById(req.params.id);
+//     if (!existing) {
+//       return res.status(404).json({ error: "Anniversary not found" });
+//     }
+
+//     await Anniversary.findByIdAndDelete(req.params.id);
+
+//     res.json({
+//       success: true,
+//       message: "Anniversary deleted successfully",
+//     });
+//   } catch (err) {
+//     console.error("❌ DELETE ERROR:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
+const Anniversary = require("../models/Anniversary");
+
+/* ======================================================
+   GET ANNIVERSARIES (LIST + SEARCH + PAGINATION)
+====================================================== */
 exports.getBirthdays = async (req, res) => {
   try {
-    const { search = '', page = 1, limit = 10 } = req.query;
-    const q = search ? { name: { $regex: search, $options: 'i' } } : {};
+    const { search = "", page = 1, limit = 10 } = req.query;
 
-    const total = await Anniversary.countDocuments(q);
-    const items = await Anniversary.find(q)
-      .skip((page - 1) * limit)
-      .limit(Number(limit))
-      .sort({ createdAt: -1 });
+    const query = search
+      ? { name: { $regex: search, $options: "i" } }
+      : {};
 
-    res.json({ anniversaries: items, total, pages: Math.ceil(total / limit) });
+    const total = await Anniversary.countDocuments(query);
+
+    const anniversaries = await Anniversary.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * Number(limit))
+      .limit(Number(limit));
+
+    res.json({
+      success: true,
+      anniversaries,
+      total,
+      pages: Math.ceil(total / limit),
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Fetch failed' });
+    console.error("❌ GET ERROR:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
+/* ======================================================
+   CREATE ANNIVERSARY (OLD + NEW SUPPORT)
+====================================================== */
 exports.createBirthday = async (req, res) => {
   try {
     const body = req.body;
-    let photoPath = '', bannerPath = '', photoPublicId = '', bannerPublicId = '';
 
-    if (process.env.USE_CLOUDINARY === 'true') {
-      if (req.files?.photo?.[0]) {
-        const r = await cloudinary.uploader.upload(req.files.photo[0].path, { folder: 'anniversaries' });
-        photoPath = r.secure_url; photoPublicId = r.public_id;
-      }
-      if (req.files?.banner?.[0]) {
-        const r = await cloudinary.uploader.upload(req.files.banner[0].path, { folder: 'anniversaries' });
-        bannerPath = r.secure_url; bannerPublicId = r.public_id;
-      }
-    } else {
-      photoPath = req.files?.photo?.[0]?.path || '';
-      bannerPath = req.files?.banner?.[0]?.path || '';
-    }
+    const mediaFile = req.files?.media?.[0];
+    const bannerFile = req.files?.banner?.[0];
 
-    const doc = await Anniversary.create({
+    const anniversary = await Anniversary.create({
+      /* ============== BASIC INFO ============== */
       title: body.title,
       name: body.name,
       date: body.date,
-      status: body.status || 'active',
-      photo: photoPath, photoPublicId,
-      banner: bannerPath, bannerPublicId,
+      status: body.status || "active",
+
+      /* ============== MEDIA ============== */
+      media: mediaFile?.path || "",
+      mediaPublicId: mediaFile?.filename || "",
+      mediaType: mediaFile?.mimetype?.startsWith("video")
+        ? "video"
+        : "image",
+
+      /* ============== BANNER ============== */
+      banner: bannerFile?.path || "",
+      bannerPublicId: bannerFile?.filename || "",
+
+      /* ============== OLD CONTROLS (KEEP) ============== */
       zoom: Number(body.zoom) || 1,
       offsetX: Number(body.offsetX) || 0,
       offsetY: Number(body.offsetY) || 0,
+
       bannerZoom: Number(body.bannerZoom) || 1,
       bannerX: Number(body.bannerX) || 0,
-      bannerY: Number(body.bannerY) || 0
+      bannerY: Number(body.bannerY) || 0,
+
+      /* ============== NEW TRANSITION ============== */
+      transition: {
+        placement: body.transitionPlacement || "below",
+        type: body.transitionType || "fade",
+        duration: Number(body.transitionDuration) || 0.8,
+      },
+
+      /* ============== NEW ANIMATION ============== */
+      animation: {
+        profile: {
+          effect: body.profileAnimation || "fadeIn",
+          delay: Number(body.profileDelay) || 0,
+          duration: Number(body.profileDuration) || 0.6,
+        },
+        text: {
+          effect: body.textAnimation || "fadeIn",
+          delay: Number(body.textDelay) || 0.2,
+          duration: Number(body.textDuration) || 0.5,
+        },
+      },
+
+      /* ============== NEW PROFILE SETTINGS ============== */
+      profile: {
+        position: body.profilePosition || "center",
+        size: body.profileSize || "140px",
+        shape: body.profileShape || "circle",
+      },
+
+      /* ============== NEW PROFILE TRANSFORM ============== */
+      profileZoom: Number(body.profileZoom) || 1,
+      profileX: Number(body.profileX) || 0,
+      profileY: Number(body.profileY) || 0,
+      profileRotate: Number(body.profileRotate) || 0,
+
+      /* ============== ORIENTATION ============== */
+      orientation: body.orientation || "portrait",
     });
 
-    res.json({ message: 'Anniversary added', anniversary: doc });
+    res.status(201).json({
+      success: true,
+      anniversary,
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Create failed' });
+    console.error("❌ CREATE ERROR:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
+/* ======================================================
+   UPDATE ANNIVERSARY (SAFE MERGE)
+====================================================== */
 exports.updateBirthday = async (req, res) => {
   try {
-    const id = req.params.id;
+    const existing = await Anniversary.findById(req.params.id);
+    if (!existing) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Anniversary not found" });
+    }
+
     const data = { ...req.body };
-    const existing = await Anniversary.findById(id);
-    if (!existing) return res.status(404).json({ error: 'Not found' });
 
-    if (req.files?.photo?.[0]) {
-      if (existing.photoPublicId && process.env.USE_CLOUDINARY === 'true')
-        await cloudinary.uploader.destroy(existing.photoPublicId);
-      if (process.env.USE_CLOUDINARY === 'true') {
-        const r = await cloudinary.uploader.upload(req.files.photo[0].path, { folder: 'anniversaries' });
-        data.photo = r.secure_url; data.photoPublicId = r.public_id;
-      } else {
-        data.photo = req.files.photo[0].path;
-      }
+    /* ============== MEDIA UPDATE ============== */
+    if (req.files?.media?.[0]) {
+      const file = req.files.media[0];
+      data.media = file.path;
+      data.mediaPublicId = file.filename;
+      data.mediaType = file.mimetype.startsWith("video")
+        ? "video"
+        : "image";
     }
 
+    /* ============== BANNER UPDATE ============== */
     if (req.files?.banner?.[0]) {
-      if (existing.bannerPublicId && process.env.USE_CLOUDINARY === 'true')
-        await cloudinary.uploader.destroy(existing.bannerPublicId);
-      if (process.env.USE_CLOUDINARY === 'true') {
-        const r = await cloudinary.uploader.upload(req.files.banner[0].path, { folder: 'anniversaries' });
-        data.banner = r.secure_url; data.bannerPublicId = r.public_id;
-      } else {
-        data.banner = req.files.banner[0].path;
-      }
+      const file = req.files.banner[0];
+      data.banner = file.path;
+      data.bannerPublicId = file.filename;
     }
 
-    const updated = await Anniversary.findByIdAndUpdate(id, data, { new: true });
-    res.json({ message: 'Updated', anniversary: updated });
+    /* ============== NUMBER SAFETY (OLD + NEW) ============== */
+    [
+      "zoom",
+      "offsetX",
+      "offsetY",
+      "bannerZoom",
+      "bannerX",
+      "bannerY",
+      "profileZoom",
+      "profileX",
+      "profileY",
+      "profileRotate",
+    ].forEach((key) => {
+      if (data[key] !== undefined) {
+        data[key] = Number(data[key]);
+      }
+    });
+
+    const updated = await Anniversary.findByIdAndUpdate(
+      req.params.id,
+      data,
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      anniversary: updated,
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Update failed' });
+    console.error("❌ UPDATE ERROR:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
+/* ======================================================
+   DELETE ANNIVERSARY
+====================================================== */
 exports.deleteBirthday = async (req, res) => {
   try {
-    const id = req.params.id;
-    const existing = await Anniversary.findById(id);
-    if (!existing) return res.status(404).json({ error: 'Not found' });
+    const existing = await Anniversary.findById(req.params.id);
+    if (!existing) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Anniversary not found" });
+    }
 
-    if (existing.photoPublicId && process.env.USE_CLOUDINARY === 'true')
-      await cloudinary.uploader.destroy(existing.photoPublicId);
-    if (existing.bannerPublicId && process.env.USE_CLOUDINARY === 'true')
-      await cloudinary.uploader.destroy(existing.bannerPublicId);
+    await Anniversary.findByIdAndDelete(req.params.id);
 
-    await Anniversary.findByIdAndDelete(id);
-    res.json({ message: 'Deleted' });
+    res.json({
+      success: true,
+      message: "Anniversary deleted successfully",
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Delete failed' });
+    console.error("❌ DELETE ERROR:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 };

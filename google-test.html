@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body>
+    <div
+      id="g_id_onload"
+      data-client_id="564482096190-3crlbh8lo60lkk4j9ckmpc774smr0a2q.apps.googleusercontent.com"
+      data-callback="handleCredential"
+    ></div>
+
+    <div class="g_id_signin"></div>
+
+    <script>
+      function handleCredential(response) {
+        console.log("GOOGLE ID TOKEN:", response.credential);
+        alert("Console open karo, token copy karo");
+      }
+    </script>
+  </body>
+</html>

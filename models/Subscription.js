@@ -68,6 +68,7 @@ const subscriptionSchema = new mongoose.Schema(
     finalAmount: { type: Number, default: 0 },
 
     status: { type: String, default: "pending" },
+       razorpayOrderId: { type: String },
     paymentId: { type: String },
 
     startDate: { type: Date, default: Date.now },
