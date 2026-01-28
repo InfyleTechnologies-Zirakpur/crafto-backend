@@ -215,6 +215,7 @@ app.use("/api/notifications", notiRoutes);
 app.use("/api/downloads", require("./routes/downloadRoutes"));
 app.use("/api/posts", require("./routes/posts"));
 app.use("/api/politician-posts", politicianPostRoutes);
+app.use("/api/ads", require("./routes/ads.routes"));
 // 🔥 Firebase Admin Check at Startup
 try {
   const admin = require("./config/firebase");
